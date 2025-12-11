@@ -54,8 +54,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
             );
             context.push('/otp', extra: _phoneController.text);
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            // Show detailed error dialog
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Registration Error'),
+                content: Text('Failed: ${state.message}\n\nPlease check your internet & server status.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
             );
           }
         },

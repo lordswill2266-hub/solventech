@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Welcome Back',
+                        'Welcome Back (v2)',
                         style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Theme.of(context).primaryColor,
@@ -125,6 +125,15 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextButton(
                         onPressed: () => context.push('/register'),
                         child: const Text("Don't have an account? Register"),
+                      ),
+                      SizedBox(height: 30.h),
+                      // Debug Info
+                      Center(
+                        child: Text(
+                          'Debug: connecting to ${AppConstants.baseUrl}',
+                          style: TextStyle(fontSize: 10, color: Colors.grey),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
                     ],
                   ),
