@@ -24,6 +24,6 @@ flutter doctor -v
 # 4. Build Web App
 echo "Building Solven Shopper Web..."
 flutter config --enable-web
-flutter build web --release --dart-define=API_URL=https://solventech-x4kp.onrender.com
+flutter build web --release --web-renderer html --base-href / --dart-define=API_URL=https://solventech-x4kp.onrender.com
 
 echo "Build Complete!"
