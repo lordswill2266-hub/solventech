@@ -94,10 +94,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       ElevatedButton(
                         onPressed: state is AuthLoading ? null : _submit,
                         child: state is AuthLoading
-                            ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                  ),
+                                  SizedBox(width: 10.w),
+                                  const Text('Waking up server (may take 1 min)...'),
+                                ],
                               )
                             : const Text('Continue'),
                       ),
