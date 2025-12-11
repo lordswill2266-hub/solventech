@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "========================================"
-echo "   Auto-Installing Flutter for Vercel   "
+echo "   Auto-Installing Flutter for Vercel (FIXED v3)   "
 echo "========================================"
 
 # 1. Install Flutter
