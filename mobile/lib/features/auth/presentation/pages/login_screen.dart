@@ -42,8 +42,21 @@ class _LoginScreenState extends State<LoginScreen> {
             );
             context.push('/otp', extra: _phoneController.text);
           } else if (state is AuthError) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            // Show detailed error dialog for debugging
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Connection Error'),
+                content: Text(
+                  'Could not connect to server.\n\nType: ${state.message}\n\nTroubleshooting:\n1. Check your internet\n2. Server might be sleeping (wait 1 min)\n3. Check browser console for CORS errors',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              ),
             );
           }
         },
