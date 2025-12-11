@@ -9,8 +9,10 @@ async function bootstrap() {
 
     // Enable CORS for mobile web
     app.enableCors({
-        origin: true, // Reflects the request origin (allows localhost:8080)
+        origin: ['https://solventech.vercel.app', 'http://localhost:8080', 'http://localhost:3000'],
         credentials: true,
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+        allowedHeaders: 'Content-Type, Accept, Authorization',
     });
 
     // Global validation pipe

@@ -9,10 +9,12 @@ class AppConstants {
     const envUrl = String.fromEnvironment('API_URL');
     if (envUrl.isNotEmpty) return '$envUrl/api/v1';
 
-    // 2. Development fallbacks
-    if (kIsWeb) return 'http://localhost:3000/api/v1';
+    // 2. Production Hardcode (Safe fallback)
+    if (kIsWeb) return 'https://solventech-x4kp.onrender.com/api/v1'; // Forces production backend on Web
+
+    // 3. Development fallbacks (Android/iOS/Desktop)
     if (Platform.isAndroid) return 'http://10.0.2.2:3000/api/v1';
-    return 'http://localhost:3000/api/v1'; // Windows, iOS, macOS
+    return 'http://localhost:3000/api/v1';
   }
   
   // Storage Keys
