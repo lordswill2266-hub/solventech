@@ -1,0 +1,22 @@
+import { Injectable } from '@nestjs/common';
+import { v2 as cloudinary } from 'cloudinary';
+import toStream = require('streamifier');
+
+@Injectable()
+export class UploadService {
+    async uploadImage(file: Express.Multer.File): Promise<any> {
+        return new Promise((resolve, reject) => {
+            const upload = cloudinary.uploader.upload_stream(
+                {
+                    folder: 'solven-shopper',
+                },
+                (error, result) => {
+                    if (error) return reject(error);
+                    resolve(result);
+                },
+            );
+
+            toStream.createReadStream(file.buffer).pipe(upload);
+        });
+    }
+}

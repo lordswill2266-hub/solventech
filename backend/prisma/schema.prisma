@@ -1,0 +1,337 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+enum UserRole {
+  BUYER
+  SELLER
+  RIDER
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model User {
+  id                String             @id @default(uuid())
+  phoneNumber       String             @unique @map("phone_number")
+  role              UserRole           @default(BUYER)
+  firstName         String?            @map("first_name")
+  lastName          String?            @map("last_name")
+  email             String?            @unique
+  profileImage      String?            @map("profile_image")
+  
+  // Verification
+  isPhoneVerified   Boolean            @default(false) @map("is_phone_verified")
+  isBvnVerified     Boolean            @default(false) @map("is_bvn_verified")
+  bvnHash           String?            @map("bvn_hash") // Encrypted BVN
+  verificationStatus VerificationStatus @default(PENDING) @map("verification_status")
+  
+  // Bank details (for sellers)
+  bankName          String?            @map("bank_name")
+  accountNumber     String?            @map("account_number")
+  accountName       String?            @map("account_name")
+  
+  // Timestamps
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  lastLoginAt       DateTime?          @map("last_login_at")
+  
+  // Relations
+  wallet            Wallet?
+  products          Product[]
+  buyerOrders       Order[]            @relation("BuyerOrders")
+  sellerOrders      Order[]            @relation("SellerOrders")
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
+  notifications     Notification[]
+  deliveries        Delivery[]
+  
+  @@map("users")
+}
+
+// ============================================
+// WALLET & TRANSACTIONS
+// ============================================
+
+model Wallet {
+  id                String             @id @default(uuid())
+  userId            String             @unique @map("user_id")
+  balance           Decimal            @default(0) @db.Decimal(15, 2)
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      Transaction[]
+  
+  @@map("wallets")
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+  WITHDRAWAL
+  REFUND
+  COMMISSION
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model Transaction {
+  id                String             @id @default(uuid())
+  walletId          String             @map("wallet_id")
+  type              TransactionType
+  amount            Decimal            @db.Decimal(15, 2)
+  balanceBefore     Decimal            @map("balance_before") @db.Decimal(15, 2)
+  balanceAfter      Decimal            @map("balance_after") @db.Decimal(15, 2)
+  status            TransactionStatus  @default(PENDING)
+  reference         String             @unique
+  description       String
+  metadata          Json?
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  
+  wallet            Wallet             @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  
+  @@map("transactions")
+}
+
+// ============================================
+// PRODUCTS
+// ============================================
+
+enum ProductCategory {
+  ELECTRONICS
+  FASHION
+  PHONES
+  LAPTOPS
+  ACCESSORIES
+  BOOKS
+  OTHER
+}
+
+enum ProductCondition {
+  NEW
+  USED_LIKE_NEW
+  USED_GOOD
+  USED_FAIR
+}
+
+model Product {
+  id                String             @id @default(uuid())
+  sellerId          String             @map("seller_id")
+  title             String
+  description       String             @db.Text
+  category          ProductCategory
+  condition         ProductCondition   @default(NEW)
+  price             Decimal            @db.Decimal(15, 2)
+  images            String[]           // Array of image URLs
+  location          String             // City/State
+  isActive          Boolean            @default(true) @map("is_active")
+  viewCount         Int                @default(0) @map("view_count")
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  
+  seller            User               @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  orders            Order[]
+  
+  @@index([sellerId])
+  @@index([category])
+  @@index([isActive])
+  @@map("products")
+}
+
+// ============================================
+// ORDERS & ESCROW
+// ============================================
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_HELD
+  SHIPPED
+  IN_TRANSIT
+  DELIVERED
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+model Order {
+  id                String             @id @default(uuid())
+  buyerId           String             @map("buyer_id")
+  sellerId          String             @map("seller_id")
+  productId         String             @map("product_id")
+  
+  quantity          Int                @default(1)
+  totalAmount       Decimal            @map("total_amount") @db.Decimal(15, 2)
+  commissionAmount  Decimal            @map("commission_amount") @db.Decimal(15, 2)
+  status            OrderStatus        @default(PENDING_PAYMENT)
+  
+  // Delivery info
+  deliveryAddress   String             @map("delivery_address")
+  deliveryPhone     String             @map("delivery_phone")
+  deliveryNotes     String?            @map("delivery_notes")
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  completedAt       DateTime?          @map("completed_at")
+  
+  buyer             User               @relation("BuyerOrders", fields: [buyerId], references: [id])
+  seller            User               @relation("SellerOrders", fields: [sellerId], references: [id])
+  product           Product            @relation(fields: [productId], references: [id])
+  escrow            EscrowTransaction?
+  delivery          Delivery?
+  messages          Message[]
+  
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+  @@map("orders")
+}
+
+enum EscrowStatus {
+  PENDING
+  HELD
+  RELEASED
+  REFUNDED
+  DISPUTED
+}
+
+model EscrowTransaction {
+  id                String             @id @default(uuid())
+  orderId           String             @unique @map("order_id")
+  amount            Decimal            @db.Decimal(15, 2)
+  status            EscrowStatus       @default(PENDING)
+  
+  // Payment gateway info
+  paymentGateway    String             @map("payment_gateway") // "paystack" or "monnify"
+  paymentReference  String             @unique @map("payment_reference")
+  virtualAccountNumber String?         @map("virtual_account_number")
+  
+  heldAt            DateTime?          @map("held_at")
+  releasedAt        DateTime?          @map("released_at")
+  refundedAt        DateTime?          @map("refunded_at")
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  
+  order             Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([status])
+  @@map("escrow_transactions")
+}
+
+// ============================================
+// LOGISTICS
+// ============================================
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+}
+
+model Delivery {
+  id                String             @id @default(uuid())
+  orderId           String             @unique @map("order_id")
+  riderId           String?            @map("rider_id")
+  
+  pickupLocation    String             @map("pickup_location")
+  deliveryLocation  String             @map("delivery_location")
+  status            DeliveryStatus     @default(PENDING)
+  
+  assignedAt        DateTime?          @map("assigned_at")
+  pickedUpAt        DateTime?          @map("picked_up_at")
+  deliveredAt       DateTime?          @map("delivered_at")
+  
+  proofOfDelivery   String?            @map("proof_of_delivery") // Image URL
+  deliveryNotes     String?            @map("delivery_notes")
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  
+  order             Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rider             User?              @relation(fields: [riderId], references: [id])
+  
+  @@index([riderId])
+  @@index([status])
+  @@map("deliveries")
+}
+
+// ============================================
+// MESSAGING
+// ============================================
+
+model Message {
+  id                String             @id @default(uuid())
+  orderId           String             @map("order_id")
+  senderId          String             @map("sender_id")
+  receiverId        String             @map("receiver_id")
+  
+  content           String             @db.Text
+  isRead            Boolean            @default(false) @map("is_read")
+  
+  createdAt         DateTime           @default(now()) @map("created_at")
+  
+  order             Order              @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  sender            User               @relation("SentMessages", fields: [senderId], references: [id])
+  receiver          User               @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  
+  @@index([orderId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@map("messages")
+}
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+enum NotificationType {
+  ORDER_UPDATE
+  PAYMENT_RECEIVED
+  NEW_MESSAGE
+  SYSTEM_ALERT
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String           @map("user_id")
+  type      NotificationType
+  title     String
+  message   String
+  metadata  Json?
+  isRead    Boolean          @default(false) @map("is_read")
+  
+  createdAt DateTime         @default(now()) @map("created_at")
+  
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}

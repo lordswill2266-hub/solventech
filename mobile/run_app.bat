@@ -1,0 +1,10 @@
+@echo off
+echo Setting up Flutter...
+set FLUTTER_PATH=C:\src\flutter\bin\flutter.bat
+
+echo Fetching dependencies...
+call "%FLUTTER_PATH%" pub get
+
+echo Running App...
+call "%FLUTTER_PATH%" run
+pause
