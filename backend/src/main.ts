@@ -9,7 +9,7 @@ async function bootstrap() {
 
     // Enable CORS for mobile web
     app.enableCors({
-        origin: ['https://solventech.vercel.app', 'http://localhost:8080', 'http://localhost:3000'],
+        origin: true, // Allow any origin (fixes Vercel Preview URLs)
         credentials: true,
         methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
         allowedHeaders: 'Content-Type, Accept, Authorization',
